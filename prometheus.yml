@@ -1,0 +1,7 @@
+global:
+  scrape_interval: 15s  # how often Prometheus will scrape metrics (default is 1m)
+
+scrape_configs:
+  - job_name: 'nodejs-app'  # this is just a name you give to the group of targets
+    static_configs:
+      - targets: ['localhost:3000']  # where your app is running
