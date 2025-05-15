@@ -2,42 +2,46 @@ const express = require('express');
 const client = require('prom-client');
 
 const app = express();
-const port = 3000;
+const PORT = 3000;
 
-// Enable collection of default metrics (like memory, CPU usage)
+// Enable collection of default metrics (memory, CPU, etc.)
 client.collectDefaultMetrics();
 
-// Create a custom counter metric
-const requestCounter = new client.Counter({
+// Define a custom counter for HTTP requests
+const HTTP_REQUEST_COUNTER = new client.Counter({
   name: 'http_requests_total',
   help: 'Total number of HTTP requests',
   labelNames: ['method', 'route', 'status'],
 });
 
-// Middleware to count requests
+// Middleware to increment request counter
 app.use((req, res, next) => {
   res.on('finish', () => {
-    requestCounter.inc({
+    HTTP_REQUEST_COUNTER.inc({
       method: req.method,
-      route: req.route ? req.route.path : req.path,
+      route: req.route?.path || req.path,
       status: res.statusCode,
     });
   });
   next();
 });
 
-// Sample route
+// Root route
 app.get('/', (req, res) => {
   res.send('Hello from Node.js!');
 });
 
-// Metrics endpoint
+// Prometheus metrics endpoint
 app.get('/metrics', async (req, res) => {
-  res.set('Content-Type', client.register.contentType);
-  res.end(await client.register.metrics());
+  try {
+    res.set('Content-Type', client.register.contentType);
+    res.end(await client.register.metrics());
+  } catch (err) {
+    res.status(500).end(err.message);
+  }
 });
 
 // Start server
-app.listen(port, () => {
-  console.log(`Server is running at http://localhost:${port}`);
+app.listen(PORT, () => {
+  console.log(`🚀 Server is running at http://localhost:${PORT}`);
 });
